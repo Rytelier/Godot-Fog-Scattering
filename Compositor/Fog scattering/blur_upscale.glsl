@@ -18,20 +18,14 @@ void main() {
 	vec2 o = 0.5 / size * 3;
 
 	vec4 color = vec4(0.0);
-	
-	// Sample 4 edge centers with 1x weight each
-	color += texture(texture_in, uv + vec2(-o.x * 2.0, 0.0)); // left
-	color += texture(texture_in, uv + vec2( o.x * 2.0, 0.0)); // right
-	color += texture(texture_in, uv + vec2(0.0, -o.y * 2.0)); // bottom
-	color += texture(texture_in, uv + vec2(0.0,  o.y * 2.0)); // top
-	
+
 	// Sample 4 diagonal corners with 2x weight each
 	color += texture(texture_in, uv + vec2(-o.x,  o.y)) * 2.0; // top-left
 	color += texture(texture_in, uv + vec2( o.x,  o.y)) * 2.0; // top-right
 	color += texture(texture_in, uv + vec2(-o.x, -o.y)) * 2.0; // bottom-left
 	color += texture(texture_in, uv + vec2( o.x, -o.y)) * 2.0; // bottom-right
 
-	color /= 12.0;
+	color /= 8.0;
 
 	imageStore(texture_out, texel, color);
 }

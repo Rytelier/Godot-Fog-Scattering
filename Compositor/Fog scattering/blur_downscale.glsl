@@ -10,7 +10,8 @@ layout(set = 0, binding = 1) uniform sampler2D texture_in;
 
 float brightness(vec3 c)
 {
-	return max(max(c.r, c.g), c.b);
+	return (c.x + c.y + c.z) * 0.3333; // Faster method
+	//return max(max(c.r, c.g), c.b);
 }
 
 
