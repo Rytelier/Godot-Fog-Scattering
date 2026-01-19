@@ -49,6 +49,8 @@ func _notification(what):
 			rd.free_rid(shader_downscale)
 			rd.free_rid(shader_upscale)
 			rd.free_rid(sampler)
+			for tex in textures:
+				rd.free_rid(tex)
 		
 		if Engine.is_editor_hint():
 			EditorInterface.get_resource_filesystem().resources_reimported.disconnect(reload.bind())
