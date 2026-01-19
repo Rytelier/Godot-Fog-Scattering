@@ -7,6 +7,9 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout(set = 0, binding = 0, rgba16f) uniform image2D texture_out;
 layout(set = 0, binding = 1) uniform sampler2D texture_in;
 
+layout(push_constant, std430) uniform Params {
+	float weight;
+} params;
 
 void main() {
 	ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
@@ -26,6 +29,7 @@ void main() {
 	color += texture(texture_in, uv + vec2( o.x, -o.y)) * 2.0; // bottom-right
 
 	color /= 8.0;
+	color = mix(imageLoad(texture_out, texel), color, 1 - params.weight);
 
 	imageStore(texture_out, texel, color);
 }

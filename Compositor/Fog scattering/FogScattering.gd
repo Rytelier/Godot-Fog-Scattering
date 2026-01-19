@@ -10,11 +10,18 @@ const file_downscale = preload(path_downscale)
 const file_upscale = preload(path_upscale)
 const file_compose = preload(path_compose)
 
-@export_range(2, 7, 1) var radius: int = 5
+@export_range(0, 7, 0.001) var radius: float = 5:
+	set(v):
+		radius = v
+		layers = max(ceil(radius), 3)
+		weight = layers - radius if radius > 2 else 1
 @export_range(0, 1, 0.001) var opacity: float = 0.5
 #@export var depth_auto: bool
 @export var depth_from: float = 20
 @export var depth_to: float = 50
+
+var layers: float
+var weight: float
 
 
 var rd: RenderingDevice
@@ -36,6 +43,8 @@ var sampler: RID
 
 func _init() -> void:
 	rd = RenderingServer.get_rendering_device()
+	
+	radius = radius
 	
 	_initialize_compute()
 	if (Engine.is_editor_hint() and not EditorInterface.get_resource_filesystem().resources_reimported.is_connected(reload.bind())):
@@ -84,7 +93,7 @@ func _render_callback(effect_callback_type_: int, render_data: RenderData) -> vo
 			if size.x == 0 and size.y == 0:
 				return
 			
-			if radius != layers_tmp or size != size_tmp:
+			if layers != layers_tmp or size != size_tmp:
 				setup_buffers(size.x, size.y)
 			
 			@warning_ignore("integer_division")
@@ -95,7 +104,7 @@ func _render_callback(effect_callback_type_: int, render_data: RenderData) -> vo
 			
 			var view_count := render_scene_buffers.get_view_count()
 			for view in range(view_count):
-				if radius < 1:
+				if layers < 1:
 					return
 				
 				var color_image := render_scene_buffers.get_color_layer(view)
@@ -111,7 +120,7 @@ func _render_callback(effect_callback_type_: int, render_data: RenderData) -> vo
 				run_compute(uniform_set_in, pipeline_downscale, x_groups, y_groups, z_groups)
 				
 				## Downscale
-				for layer in range(0, radius - 1):
+				for layer in range(layers - 1):
 					var uniform_set = rd.uniform_set_create(
 						[get_sampler_uniform(textures[layer], 1), # Out
 						get_image_uniform(textures[layer + 1], 0)], # In
@@ -119,12 +128,15 @@ func _render_callback(effect_callback_type_: int, render_data: RenderData) -> vo
 					run_compute(uniform_set, pipeline_downscale, x_groups, y_groups, z_groups)
 					
 				## Upscale
-				for layer in range(radius - 1, 0, -1):
+				for layer in range(layers - 1, 0, -1):
 					var uniform_set = rd.uniform_set_create(
 						[get_sampler_uniform(textures[layer], 1), # Out
 						get_image_uniform(textures[layer - 1], 0)], # In
 						shader_downscale, 0)
-					run_compute(uniform_set, pipeline_upscale, x_groups, y_groups, z_groups)
+					if layer == layers - 1:
+						run_compute_c(uniform_set, [weight, 0, 0, 0], pipeline_upscale, x_groups, y_groups, z_groups)
+					else:
+						run_compute_c(uniform_set, [0, 0, 0, 0], pipeline_upscale, x_groups, y_groups, z_groups)
 				
 				## Compose
 				var render_scene_data = render_data.get_render_scene_data()
@@ -147,7 +159,7 @@ func _render_callback(effect_callback_type_: int, render_data: RenderData) -> vo
 					], shader_compose, 0)
 				size = render_scene_buffers.get_internal_size()
 				
-				var push_constant = [size.x, size.y, radius, opacity, depth_from, depth_to, 0, 0,]
+				var push_constant = [size.x, size.y, layers, opacity if radius > 2 else opacity * radius / 2, depth_from, depth_to, 0, 0,]
 				
 				@warning_ignore("integer_division")
 				x_groups = (size.x - 1) / 8 + 1
@@ -208,10 +220,10 @@ func setup_buffers(w: int, h: int) -> void:
 	
 	textures.clear()
 	
-	layers_tmp = radius
+	layers_tmp = layers
 	size_tmp = Vector2i(w, h)
 	
-	for i in radius:
+	for i in layers:
 		w = maxi(1, w >> 1)
 		h = maxi(1, h >> 1)
 		
