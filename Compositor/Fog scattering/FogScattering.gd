@@ -111,7 +111,7 @@ func _render_callback(effect_callback_type_: int, render_data: RenderData) -> vo
 				run_compute(uniform_set_in, pipeline_downscale, x_groups, y_groups, z_groups)
 				
 				## Downscale
-				for layer in range(radius - 1):
+				for layer in range(0, radius - 1):
 					var uniform_set = rd.uniform_set_create(
 						[get_sampler_uniform(textures[layer], 1), # Out
 						get_image_uniform(textures[layer + 1], 0)], # In
@@ -225,7 +225,7 @@ func get_texture_format(width: int, height: int) -> RDTextureFormat:
 	var texture_format := RDTextureFormat.new()
 	texture_format.width = width
 	texture_format.height = height
-	texture_format.format = RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
+	texture_format.format = RenderingDevice.DATA_FORMAT_R16G16B16A16_SFLOAT
 	texture_format.usage_bits = (
 		RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT |
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
