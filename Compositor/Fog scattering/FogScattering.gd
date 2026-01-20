@@ -14,7 +14,7 @@ const file_compose = preload(path_compose)
 	set(v):
 		radius = v
 		layers = max(ceil(radius), 3)
-		weight = layers - radius if radius > 2 else 1
+		weight = layers - radius if radius > 2 else 1.0
 @export_range(0, 1, 0.001) var opacity: float = 0.5
 #@export var depth_auto: bool
 @export var depth_from: float = 20
@@ -97,9 +97,9 @@ func _render_callback(effect_callback_type_: int, render_data: RenderData) -> vo
 				setup_buffers(size.x, size.y)
 			
 			@warning_ignore("integer_division")
-			var x_groups := (size.x - 1) / 8 + 1
+			var x_groups := (size.x - 1) / 16 + 1
 			@warning_ignore("integer_division")
-			var y_groups := (size.y - 1) / 8 + 1
+			var y_groups := (size.y - 1) / 16 + 1
 			var z_groups := 1
 			
 			var view_count := render_scene_buffers.get_view_count()
